@@ -1011,6 +1011,7 @@
 			/obj/item/stack/medical/splint = -1,
 			/obj/item/stack/medical/heal_pack/advanced/bruise_pack = 50,
 			/obj/item/stack/medical/heal_pack/advanced/burn_pack = 50,
+			/obj/item/stack/medical/heal_pack/advanced/repair_pack = 50,
 		),
 		"Misc" = list(
 			/obj/item/defibrillator = 8,

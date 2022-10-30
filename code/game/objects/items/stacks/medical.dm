@@ -14,6 +14,8 @@
 	var/skill_level_needed = SKILL_MEDICAL_UNTRAINED
 	///Fumble delay applied without sufficient skill
 	var/unskilled_delay = SKILL_TASK_TRIVIAL
+	///If TRUE, works on robotic parts instead of organic ones
+	var/affects_robots = FALSE
 
 /obj/item/stack/medical/attack(mob/living/carbon/M as mob, mob/user as mob)
 	if(!istype(M))
@@ -57,7 +59,7 @@
 
 ///Checks for whether the limb is appropriately organic/robotic
 /obj/item/stack/medical/proc/can_affect_limb(datum/limb/affecting)
-	if(affecting.limb_status & LIMB_ROBOT)
+	if(!affects_robots != !(affecting.limb_status & LIMB_ROBOT))
 		return FALSE
 	return TRUE
 
@@ -119,9 +121,11 @@
 		affected |= affecting.salve()
 	if(heal_flags & DISINFECT)
 		affected |= affecting.disinfect()
+	if(affects_robots && (affecting.brute_dam || affecting.burn_dam))//robotic limbs mean wound flags don't really apply. Checks for damage instead
+		affected = TRUE
 
 	if(affected)
-		affecting.heal_limb_damage(heal_brute * unskilled_penalty, heal_burn * unskilled_penalty, updating_health = TRUE)
+		affecting.heal_limb_damage(heal_brute * unskilled_penalty, heal_burn * unskilled_penalty, robo_repair = affects_robots, updating_health = TRUE)
 
 	return affected
 
@@ -227,6 +231,21 @@
 	user.visible_message(span_notice("[user] covers the wounds on [patient]'s [target_limb.display_name] with regenerative membrane."),
 	span_notice("You cover the wounds on [patient]'s [target_limb.display_name] with regenerative membrane."))
 
+/obj/item/stack/medical/heal_pack/advanced/repair_pack
+	name = "advanced repair kit"
+	singular_name = "advanced repair kit"
+	desc = "An advanced repair kit for severe damage, intended for use on combat robots and synthetics."
+	icon_state = "traumakit"
+	heal_brute = 10
+	heal_burn = 10
+	affects_robots = TRUE
+
+/obj/item/stack/medical/heal_pack/advanced/repair_pack/generate_treatment_messages(mob/user, mob/patient, datum/limb/target_limb, success)
+	if(!success)
+		to_chat(user, span_warning("The damage on [patient]'s [target_limb.display_name] has already been repaired."))
+		return
+	user.visible_message(span_notice("[user] applies repair nanites to the damage on [patient]'s [target_limb.display_name]."),
+	span_notice("You apply repair nanites to the damage on [patient]'s [target_limb.display_name]."))
 /obj/item/stack/medical/splint
 	name = "medical splints"
 	singular_name = "medical splint"
