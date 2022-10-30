@@ -98,18 +98,21 @@
 	//For fast use. If you're already treating and apply to another part, don't try to start cycling again
 	if(user.do_actions)
 		return
+	//After patching the first limb, add a delay before patching the rest
+	if(!do_mob(user, patient, SKILL_TASK_VERY_EASY / (unskilled_penalty ** 2), BUSY_ICON_FRIENDLY, BUSY_ICON_MEDICAL))
+		to_chat(user, span_notice("You stop tending to [patient]'s wounds."))
+		return
 
 	//After patching the first limb, start looping through the rest with a delay on each.
 	for(affecting AS in patient.limbs)
 		if(!can_affect_limb(affecting))
 			continue
-		//Always delay on the first try, otherwise only delay if you patched the last iterated limb.
-		if(affected && !do_mob(user, patient, SKILL_TASK_VERY_EASY / (unskilled_penalty ** 2), BUSY_ICON_FRIENDLY, BUSY_ICON_MEDICAL))
-			to_chat(user, span_notice("You stop tending to [patient]'s wounds."))
-			return
-		affected = heal_limb(affecting, unskilled_penalty)
-		if(affected) //Limbs you don't treat just pass by silently
+		//If the limb is patched, add a delay before patching the next one. Otherwise, don't generate a treatment message.
+		while(heal_limb(affecting, unskilled_penalty)) //reiterates itself for repair kits
 			generate_treatment_messages(user, patient, affecting, affected)
+			if(!do_mob(user, patient, SKILL_TASK_VERY_EASY / (unskilled_penalty ** 2), BUSY_ICON_FRIENDLY, BUSY_ICON_MEDICAL))
+				to_chat(user, span_notice("You stop tending to [patient]'s wounds."))
+				return
 	to_chat(user, span_notice("You finish tending to [patient]'s wounds."))
 
 ///Applies the heal_pack to a specified limb. Unskilled penalty is a multiplier between 0 and 1 on brute/burn healing effectiveness
